@@ -1,12 +1,8 @@
 # Adapted from dynamiqs: https://github.com/dynamiqs/dynamiqs/blob/main/dynamiqs/_checks.py
 
-from __future__ import annotations
-
-from numpy import ndarray as Array
 from numpy import issubdtype, integer
 from qutip import Qobj
-
-ArrayLike = list | Array | Qobj
+from .quantum_utils import Array, ArrayLike
 
 ####################################################################################################
 # Check shape
@@ -32,20 +28,20 @@ _cases = {
 }
 
 def has_shape(x: ArrayLike, shape: str) -> bool:
-    if isinstance(x, qp.Qobj):
-        ndim = x.data.ndim
-        shape = x.shape
+    if isinstance(x, Qobj):
+        ndim_of_x = x.data.ndim
+        shape_of_x = x.shape
     else:
         # handle list[...], np.array[...] where ... = Number, Array, Qobj
         # TODO: current approach is super inefficient, I could try and avoid recreating full matrices
         if isinstance(x, list):
             x = Array(x)
 
-        ndim = x.ndim
-        shape = x.shape
+        ndim_of_x = x.ndim
+        shape_of_x = x.shape
 
     if shape in _cases:
-        return _cases[shape](x)
+        return _cases[shape](ndim_of_x, shape_of_x)
     else:
         raise ValueError(f'Unknown shape specification `{shape}`.')
 

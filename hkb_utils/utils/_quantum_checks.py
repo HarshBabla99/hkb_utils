@@ -1,12 +1,8 @@
 # Adapted from dynamiqs: https://github.com/dynamiqs/dynamiqs/blob/main/dynamiqs/utils/utils/general.py
 
-from __future__ import annotations
-
-from numpy import ndarray as Array
 from numpy import allclose, ndindex
 from qutip import Qobj
-
-ArrayLike = list | Array | Qobj
+from .quantum_utils import Array, ArrayLike
 
 def isket(x: ArrayLike) -> bool:
     r"""Returns True if the array is in the format of a ket.

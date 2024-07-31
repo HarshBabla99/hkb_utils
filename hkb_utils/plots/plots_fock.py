@@ -1,4 +1,4 @@
-from __future__ import annotations
+# Adapted from dynamiqs: https://github.com/dynamiqs/dynamiqs/blob/main/dynamiqs/plots/plots_fock.py
 
 import numpy as np
 import qutip as qp
@@ -7,6 +7,7 @@ from matplotlib.colors import ListedColormap, LogNorm, Normalize
 
 from ..utils._dim_checks import check_shape, check_times
 from ..utils._quantum_checks import isdm, isket
+from ..utils import Array, ArrayLike
 
 from .utils import (
     add_colorbar,
@@ -18,9 +19,6 @@ from .utils import (
 )
 
 __all__ = ['plot_fock', 'plot_fock_evolution']
-
-
-ArrayLike = list | np.ndarray | qp.Qobj
 
 
 def _populations(x: ArrayLike) -> Array:
@@ -35,19 +33,19 @@ def _populations(x: ArrayLike) -> Array:
 
 
 @optional_ax
-def plot_fock(
-    state: ArrayLike,
-    *,
-    ax: Axes | None = None,
-    allxticks: bool = False,
-    ymax: float | None = 1.0,
-    color: str = colors['blue'],
-    alpha: float = 1.0,
-    label: str = '',
-):
-    """Plot the photon number population of a state.
+def plot_fock(state: ArrayLike,
+              *,
+              ax        : Axes | None  = None,
+              allxticks : bool         = False,
+              ymax      : float | None = 1.0,
+              logscale  : bool         = False,
+              color     : str          = colors['blue'],
+              alpha     : float        = 1.0,
+              label     : str          = ''):
     """
-    state = jnp.asarray(state)
+    Plot the photon number population of a state.
+    """
+    state = np.asarray(state)
     check_shape(state, 'state', '(n, 1)', '(n, n)')
 
     n = state.shape[0]
@@ -64,32 +62,35 @@ def plot_fock(
     integer_ticks(ax.xaxis, n, all=allxticks)
     ket_ticks(ax.xaxis)
 
+    # set y-scale
+    if logscale:
+        ax.set_yscale('log')
+
     # turn legend on
     if label != '':
         ax.legend()
 
 
 @optional_ax
-def plot_fock_evolution(
-    states: ArrayLike,
-    *,
-    ax: Axes | None = None,
-    times: ArrayLike | None = None,
-    cmap: str = 'Blues',
-    logscale: bool = False,
-    logvmin: float = 1e-4,
-    colorbar: bool = True,
-    allyticks: bool = False,
-):
-    """Plot the photon number population of state as a function of time.
+def plot_fock_evolution(states: ArrayLike,
+                        *,
+                        ax: Axes | None = None,
+                        times: ArrayLike | None = None,
+                        cmap: str = 'Blues',
+                        logscale: bool = False,
+                        logvmin: float = 1e-4,
+                        colorbar: bool = True,
+                        allyticks: bool = False):
+    """ 
+    Plot the photon number population of state as a function of time.
     """
-    states = jnp.asarray(states)
-    times = jnp.asarray(times) if times is not None else None
+    states = np.asarray(states)
+    times = np.asarray(times) if times is not None else None
     check_shape(states, 'states', '(N, n, 1)', '(N, n, n)')
     if times is not None:
         times = check_times(times, 'times')
 
-    x = jnp.arange(len(states)) if times is None else times
+    x = np.arange(len(states)) if times is None else times
     n = states[0].shape[0]
     y = range(n)
     z = _populations(states).T
@@ -98,7 +99,7 @@ def plot_fock_evolution(
     if logscale:
         norm = LogNorm(vmin=logvmin, vmax=1.0, clip=True)
         # stepped cmap
-        ncolors = jnp.round(jnp.log10(1 / logvmin)).astype(int)
+        ncolors = np.round(np.log10(1 / logvmin)).astype(int)
         clist = sample_cmap(cmap, ncolors + 2)[1:-1]  # remove extremal colors
         cmap = ListedColormap(clist)
     else:

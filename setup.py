@@ -10,6 +10,8 @@ required_pkgs = ["numpy",
                  "matplotlib",
                  "cmasher",
                  "qutip",
+                 "dynamiqs",
+                 "imageio",
                  #"h5py",
                  #"pathos",
                  'importlib-metadata; python_version>"3.7"'

@@ -1,19 +1,20 @@
-from __future__ import annotations
+# Adapted from dynamiqs: https://github.com/dynamiqs/dynamiqs/blob/main/dynamiqs/plots/plots_hinton.py
 
 from itertools import product
 
-import jax.numpy as jnp
 import matplotlib as mpl
 import numpy as np
-from jax import Array
-from jax.typing import ArrayLike
+
+from ..utils import Array, ArrayLike
+
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 
-from .._checks import check_shape
+from ..utils._dim_checks import check_shape
 from .utils import add_colorbar, bra_ticks, integer_ticks, ket_ticks, optional_ax
+
 
 __all__ = ['plot_hinton']
 
@@ -22,28 +23,25 @@ def _normalize(x: ArrayLike, vmin: float, vmax: float) -> Array:
     # linearly normalizes data into the [0.0, 1.0] interval
     # values outside the range [vmin, vmax] are also transformed linearly, resulting in
     # values outside [0, 1]
-    x = jnp.asarray(x)
+    x = np.array(x)
     return (x - vmin) / (vmax - vmin)
 
 
-def _plot_squares(
-    ax: Axes,
-    areas: ArrayLike,
-    colors: ArrayLike,
-    offsets: ArrayLike,
-    ecolor: str = 'white',
-    ewidth: float = 0.5,
-):
+def _plot_squares(ax      : Axes,
+                  areas   : ArrayLike,
+                  colors  : ArrayLike,
+                  offsets : ArrayLike,
+                  ecolor  : str = 'white',
+                  ewidth  : float = 0.5):
     # areas: 1D array (n) with real values in [0, 1]
     # colors: 2D array (n, 4) with RGBA values
     # offsets: 2D array (n, 2) with real values in R
 
-    # we convert all inputs to numpy arrays instead of JAX arrays for two reasons:
-    # - to use masking
-    # - to fix `ValueError: Invalid RGBA argument` when using JAX array for colors
-    areas = np.asarray(areas)
-    colors = np.asarray(colors)
-    offsets = np.asarray(offsets)
+    # we convert all inputs to numpy arrays
+    # warning: do not use jax arrays here
+    areas   = np.array(areas)
+    colors  = np.array(colors)
+    offsets = np.array(offsets)
 
     # compute squares side length
     sides = np.sqrt(areas)
@@ -56,36 +54,30 @@ def _plot_squares(
     # compute squares corner coordinates
     corners = offsets - sides[..., None] / 2
 
-    patch_list = [
-        patches.Rectangle(xy, side, side, facecolor=color)
-        for xy, side, color in zip(corners, sides, colors)
-    ]
+    patch_list = [patches.Rectangle(xy, side, side, facecolor=color)
+                  for xy, side, color in zip(corners, sides, colors)]
 
-    squares = PatchCollection(
-        patch_list, match_original=True, edgecolor=ecolor, linewidth=ewidth
-    )
+    squares = PatchCollection(patch_list, match_original=True, edgecolor=ecolor, linewidth=ewidth)
 
     ax.add_collection(squares)
 
 
 @optional_ax
-def _plot_hinton(
-    areas: ArrayLike,
-    colors: ArrayLike,
-    colors_vmin: float,
-    colors_vmax: float,
-    cmap: str,
-    *,
-    ax: Axes | None = None,
-    colorbar: bool = True,
-    allticks: bool = True,
-    ecolor: str = 'white',
-    ewidth: float = 0.5,
-):
+def _plot_hinton(areas       : ArrayLike,
+                 colors      : ArrayLike,
+                 colors_vmin : float,
+                 colors_vmax : float,
+                 cmap        : str,
+                 *,
+                 ax          : Axes | None = None,
+                 colorbar    : bool        = True,
+                 allticks    : bool        = True,
+                 ecolor      : str         = 'white',
+                 ewidth      : float       = 0.5):
     # areas: 2D array (n, n) with real values in [0, 1]
     # colors: 2D array (n, n) with real values in [0, 1]
-    areas = jnp.asarray(areas)
-    colors = jnp.asarray(colors)
+    areas = np.array(areas)
+    colors = np.array(colors)
 
     areas = areas.clip(0.0, 1.0)
     colors = colors.clip(0.0, 1.0)
@@ -102,7 +94,7 @@ def _plot_hinton(
 
     # === plot squares
     # squares coordinates (cartesian product of all indices)
-    offsets = jnp.asarray(list(product(*(range(s) for s in areas.shape))))
+    offsets = np.array(list(product(*(range(s) for s in areas.shape))))
     # squares areas
     areas = areas.T.flatten()
     # squares colors
@@ -114,66 +106,66 @@ def _plot_hinton(
     if colorbar:
         norm = Normalize(colors_vmin, colors_vmax)
         cax = add_colorbar(ax, cmap, norm, size='4%', pad='4%')
-        if colors_vmin == -jnp.pi and colors_vmax == jnp.pi:
-            cax.set_yticks([-jnp.pi, 0.0, jnp.pi], labels=[r'$-\pi$', r'$0$', r'$\pi$'])
+        if colors_vmin == -np.pi and colors_vmax == np.pi:
+            cax.set_yticks([-np.pi, 0.0, np.pi], labels=[r'$-\pi$', r'$0$', r'$\pi$'])
 
 
 @optional_ax
-def plot_hinton(
-    x: ArrayLike,
-    *,
-    ax: Axes | None = None,
-    cmap: str | None = None,
-    vmin: float | None = None,
-    vmax: float | None = None,
-    colorbar: bool = True,
-    allticks: bool = False,
-    tickslabel: list[str] | None = None,
-    ecolor: str = 'white',
-    ewidth: float = 0.5,
-    clear: bool = False,
-):
-    """Plot a Hinton diagram.
-    """  # noqa: E501
-    x = jnp.asarray(x)
+def plot_hinton(x          : ArrayLike,
+                *,
+                ax         : Axes | None      = None,
+                cmap       : str | None       = None,
+                vmin       : float | None     = None,
+                vmax       : float | None     = None,
+                colorbar   : bool             = True,
+                allticks   : bool             = False,
+                tickslabel : list[str] | None = None,
+                ecolor     : str              = 'white',
+                ewidth     : float            = 0.5,
+                clear      : bool             = False):
+    """
+    Plot a Hinton diagram.
+    """
+    x = np.asarray(x)
     check_shape(x, 'x', '(n, n)')
 
     # set different defaults, areas and colors for real matrix, positive real matrix
     # and complex matrix
-    if jnp.isrealobj(x):
+    if np.isrealobj(x):
         # x: 2D array with real data in [vmin, vmax]
 
-        all_positive = jnp.all(x >= 0)
+        all_positive = np.all(x >= 0)
         if cmap is None:
             # sequential colormap for positive data, diverging colormap otherwise
-            cmap = 'Blues' if all_positive else 'dq'
+            cmap = 'Blues' if all_positive else 'dq_bwr'
         if vmin is None:
-            vmin = 0.0 if all_positive else jnp.min(x)
+            vmin = 0.0 if all_positive else np.min(x)
 
-        vmax = jnp.max(x) if vmax is None else vmax
+        vmax = np.max(x) if vmax is None else vmax
 
         # areas: absolute value of x
         area_max = max(abs(vmin), abs(vmax))
-        areas = _normalize(jnp.abs(x), 0.0, area_max)
+        areas = _normalize(np.abs(x), 0.0, area_max)
 
         # colors: value of x
         colors = _normalize(x, vmin, vmax)
         colors_vmin, colors_vmax = vmin, vmax
-    elif jnp.iscomplexobj(x):
+
+    elif np.iscomplexobj(x):
         # x: 2D array with complex data
 
         # cyclic colormap for the phase
         cmap = 'cmr_copper' if cmap is None else cmap
 
         # areas: magnitude of x
-        magnitude = jnp.abs(x)
-        areas_max = jnp.max(magnitude) if vmax is None else vmax
+        magnitude = np.abs(x)
+        areas_max = np.max(magnitude) if vmax is None else vmax
         areas = _normalize(magnitude, 0.0, areas_max)
 
         # colors: phase of x
-        phase = jnp.angle(x)
-        colors = _normalize(phase, -jnp.pi, jnp.pi)
-        colors_vmin, colors_vmax = -jnp.pi, jnp.pi
+        phase = np.angle(x)
+        colors = _normalize(phase, -np.pi, np.pi)
+        colors_vmin, colors_vmax = -np.pi, np.pi
 
     if clear:
         colorbar = False
@@ -181,18 +173,16 @@ def plot_hinton(
     if tickslabel is not None:
         allticks = True
 
-    _plot_hinton(
-        areas,
-        colors,
-        colors_vmin,
-        colors_vmax,
-        cmap,
-        ax=ax,
-        colorbar=colorbar,
-        allticks=allticks,
-        ecolor=ecolor,
-        ewidth=ewidth,
-    )
+    _plot_hinton(areas,
+                 colors,
+                 colors_vmin,
+                 colors_vmax,
+                 cmap,
+                 ax       = ax,
+                 colorbar = colorbar,
+                 allticks = allticks,
+                 ecolor   = ecolor,
+                 ewidth   = ewidth)
 
     # set ticks label format
     if tickslabel is not None:
